@@ -1,63 +1,75 @@
 import os
+import threading
+from pymongo import MongoClient
+from pymongo.errors import ConnectionFailure
 
+# Load configuration based on the environment
 if bool(os.environ.get("WEBHOOK", False)):
     from sample_config import Config
 else:
     from config import Config
 
-import threading
-
-from sqlalchemy import create_engine
-from sqlalchemy import Column, Integer
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import sessionmaker, scoped_session
-
-
-def start() -> scoped_session:
-    engine = create_engine(Config.DB_URI, client_encoding="utf8")
-    BASE.metadata.bind = engine
-    BASE.metadata.create_all(engine)
-    return scoped_session(sessionmaker(bind=engine, autoflush=False))
-
-
-BASE = declarative_base()
-SESSION = start()
-
+# Lock to prevent race conditions during insertion or deletion
 INSERTION_LOCK = threading.RLock()
 
-class Thumbnail(BASE):
-    __tablename__ = "thumbnail"
-    id = Column(Integer, primary_key=True)
-    msg_id = Column(Integer)
-    
+# MongoDB connection setup
+def start():
+    try:
+        # Connect to the MongoDB server
+        client = MongoClient(Config.DB_URI)
+        
+        # Test the connection
+        client.admin.command('ping')  # This will throw an exception if the connection fails
+        
+        # Return the database (assuming your database name is stored in Config.DB_NAME)
+        db = client[Config.DB_NAME]
+        return db
+    except ConnectionFailure:
+        print("Failed to connect to the MongoDB server.")
+        return None
+
+# Start MongoDB session
+db = start()
+
+# Thumbnail collection (assumed to be named 'thumbnails')
+thumbnail_collection = db['thumbnails'] if db else None
+
+# Thumbnail Model equivalent for MongoDB
+class Thumbnail:
     def __init__(self, id, msg_id):
         self.id = id
         self.msg_id = msg_id
 
-Thumbnail.__table__.create(checkfirst=True)
+    def to_dict(self):
+        return {"_id": self.id, "msg_id": self.msg_id}
 
+# Insert or update thumbnail
 async def df_thumb(id, msg_id):
     with INSERTION_LOCK:
-        msg = SESSION.query(Thumbnail).get(id)
-        if not msg:
-            msg = Thumbnail(id, msg_id)
-            SESSION.add(msg)
-            SESSION.flush()
+        # Check if a thumbnail with the given ID exists
+        existing = thumbnail_collection.find_one({"_id": id})
+        if existing:
+            # Update the existing thumbnail
+            thumbnail_collection.update_one({"_id": id}, {"$set": {"msg_id": msg_id}})
         else:
-            SESSION.delete(msg)
-            file = Thumbnail(id, msg_id)
-            SESSION.add(file)
-        SESSION.commit()
+            # Insert a new thumbnail
+            new_thumb = Thumbnail(id, msg_id).to_dict()
+            thumbnail_collection.insert_one(new_thumb)
 
+# Delete thumbnail by ID
 async def del_thumb(id):
     with INSERTION_LOCK:
-        msg = SESSION.query(Thumbnail).get(id)
-        SESSION.delete(msg)
-        SESSION.commit()
+        # Delete the thumbnail with the given ID
+        thumbnail_collection.delete_one({"_id": id})
 
+# Retrieve thumbnail by ID
 async def thumb(id):
     try:
-        t = SESSION.query(Thumbnail).get(id)
+        # Find the thumbnail by ID
+        t = thumbnail_collection.find_one({"_id": id})
         return t
+    except Exception as e:
+        print(f"Error retrieving thumbnail: {e}")
     finally:
-        SESSION.close()
+        # You can close MongoDB connection here if needed, though it's handled by MongoClient automatically.
+        pass
