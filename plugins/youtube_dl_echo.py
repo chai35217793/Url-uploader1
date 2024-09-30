@@ -1,3 +1,4 @@
+from pyrogram.enums import ParseMode
 import logging
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -29,7 +30,7 @@ async def echo(bot, update):
     if update.from_user.id in Config.BANNED_USERS:
         await bot.delete_messages(
             chat_id=update.chat.id,
-            message_ids=update.message_id,
+            message_ids=update.id,
             revoke=True
         )
         return
@@ -119,8 +120,8 @@ async def echo(bot, update):
         await bot.send_message(
             chat_id=update.chat.id,
             text=Translation.NO_VOID_FORMAT_FOUND.format(str(error_message)),
-            reply_to_message_id=update.message_id,
-            parse_mode="html",
+            reply_to_message_id=update.id,
+            parse_mode=ParseMode.HTML,
             disable_web_page_preview=True
         )
         return False
@@ -266,8 +267,8 @@ async def echo(bot, update):
             chat_id=update.chat.id,
             text=Translation.FORMAT_SELECTION.format(thumbnail) + "\n\n" + Translation.SET_CUSTOM_USERNAME_PASSWORD,
             reply_markup=reply_markup,
-            parse_mode="html",
-            reply_to_message_id=update.message_id
+            parse_mode=ParseMode.HTML,
+            reply_to_message_id=update.id
         )
     else:
         inline_keyboard = []
@@ -292,6 +293,6 @@ async def echo(bot, update):
             chat_id=update.chat.id,
             text=Translation.FORMAT_SELECTION.format(""),
             reply_markup=reply_markup,
-            parse_mode="html",
-            reply_to_message_id=update.message_id
+            parse_mode=ParseMode.HTML,
+            reply_to_message_id=update.id
         )
