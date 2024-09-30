@@ -1,3 +1,4 @@
+pymongo
 aiohttp
 beautifulsoup4
 hachoir
