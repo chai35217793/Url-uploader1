@@ -17,7 +17,7 @@ async def button(bot, update):
     if update.from_user.id in Config.BANNED_USERS:
         await bot.delete_messages(
             chat_id=update.message.chat.id,
-            message_ids=update.message.message_id,
+            message_ids=update.message.id,
             revoke=True
         )
         return
