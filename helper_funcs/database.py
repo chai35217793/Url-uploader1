@@ -22,11 +22,7 @@ def start():
         client.admin.command('ping')  # This will throw an exception if the connection fails
         
         # Return the database (assuming your database name is stored in Config.DB_NAME)
-        db = client[Config.DB_NAME]
-        return db
-    except ConnectionFailure:
-        print("Failed to connect to the MongoDB server.")
-        return None
+        
 
 # Start MongoDB session
 db = start()
