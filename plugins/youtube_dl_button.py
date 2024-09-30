@@ -1,3 +1,4 @@
+from pyrogram.enums import ParseMode
 import logging
 logging.basicConfig(level=logging.DEBUG,
                     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s')
@@ -40,7 +41,7 @@ async def youtube_dl_call_back(bot, update):
     except (FileNotFoundError) as e:
         await bot.delete_messages(
             chat_id=update.message.chat.id,
-            message_ids=update.message.message_id,
+            message_ids=update.message.id,
             revoke=True
         )
         return False
@@ -152,7 +153,7 @@ async def youtube_dl_call_back(bot, update):
         error_message = e_response.replace(ad_string_to_replace, "")
         await bot.edit_message_text(
             chat_id=update.message.chat.id,
-            message_id=update.message.message_id,
+            message_id=update.message.id,
             text=error_message
         )
         return False
@@ -174,7 +175,7 @@ async def youtube_dl_call_back(bot, update):
                 await bot.edit_message_text(
                     chat_id=update.message.chat.id,
                     text="Some errors occured while downloading video!",
-                    message_id=update.message.message_id
+                    message_id=update.message.id
                 )
                 logger.info("FnF error - " + str(e))
                 return
@@ -182,7 +183,7 @@ async def youtube_dl_call_back(bot, update):
             await bot.edit_message_text(
                 chat_id=update.message.chat.id,
                 text=Translation.RCHD_TG_API_LIMIT.format(time_taken_for_download, humanbytes(file_size)),
-                message_id=update.message.message_id
+                message_id=update.message.id
             )
         else:
             if Config.SCREENSHOTS=="True":
@@ -199,7 +200,7 @@ async def youtube_dl_call_back(bot, update):
             await bot.edit_message_text(
                 text=Translation.UPLOAD_START,
                 chat_id=update.message.chat.id,
-                message_id=update.message.message_id
+                message_id=update.message.id
             )
             # get the correct width, height, and duration for videos greater than 10MB
             width = 0
@@ -248,7 +249,7 @@ async def youtube_dl_call_back(bot, update):
                     chat_id=update.message.chat.id,
                     audio=download_directory,
                     caption=description,
-                    parse_mode="HTML",
+                    parse_mode=ParseMode.HTML,
                     duration=duration,
                     # performer=response_json["uploader"],
                     # title=response_json["title"],
@@ -268,7 +269,7 @@ async def youtube_dl_call_back(bot, update):
                     document=download_directory,
                     thumb=thumb_image_path,
                     caption=description,
-                    parse_mode="HTML",
+                    parse_mode=ParseMode.HTML,
                     # reply_markup=reply_markup,
                     reply_to_message_id=update.message.reply_to_message.message_id,
                     progress=progress_for_pyrogram,
@@ -298,7 +299,7 @@ async def youtube_dl_call_back(bot, update):
                     chat_id=update.message.chat.id,
                     video=download_directory,
                     caption=description,
-                    parse_mode="HTML",
+                    parse_mode=ParseMode.HTML,
                     duration=duration,
                     width=width,
                     height=height,
@@ -332,7 +333,7 @@ async def youtube_dl_call_back(bot, update):
                                     InputMediaPhoto(
                                         media=image,
                                         caption=caption,
-                                        parse_mode="html"
+                                        parse_mode=ParseMode.HTML
                                     )
                                 )
                             else:
@@ -345,7 +346,7 @@ async def youtube_dl_call_back(bot, update):
                     await bot.send_media_group(
                         chat_id=update.message.chat.id,
                         disable_notification=True,
-                        reply_to_message_id=update.message.message_id,
+                        reply_to_message_id=update.message.id,
                         media=media_album_p
                     )
             try:
@@ -359,6 +360,6 @@ async def youtube_dl_call_back(bot, update):
             await bot.edit_message_text(
                 text=Translation.AFTER_SUCCESSFUL_UPLOAD_MSG_WITH_TS.format(time_taken_for_download, time_taken_for_upload),
                 chat_id=update.message.chat.id,
-                message_id=update.message.message_id,
+                message_id=update.message.id,
                 disable_web_page_preview=True
             )
